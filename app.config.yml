@@ -1,0 +1,15 @@
+remoteConfig: http
+repo: reviewtrackers/app
+
+actions:
+  pr:
+    moveTo: 58bd9d37e28da1eefebb1b84
+
+  merged:
+    moveTo: 58bd9d248403140a8eed3786
+
+  integrated:
+    moveTo: 58bd9d393dfef362eb7cf5d8
+
+  released:
+    moveTo: 58bd9d3f3a3907aa2ecf0312

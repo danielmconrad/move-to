@@ -1,0 +1,27 @@
+remoteConfigUrl: null
+
+cardIdSource: milestone                 # milestone, title, desciption, commit
+partialRegex: /\[wip [A-Za-z0-9]\]/
+
+actions:
+  pr:
+    addLabels:
+      - in-pr
+    removeLabels: false
+    attachPullRequest: true
+    subscribeUser: true
+
+  merged:
+    addLabels:
+      - merged
+    removeLabels:
+      - in-pr
+
+  integrated:
+    addLabels:
+      - integrated
+    removeLabels: false
+
+  released:
+    addLabels:
+      - released

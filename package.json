@@ -1,0 +1,25 @@
+{
+  "name": "move-to",
+  "version": "0.0.0-development",
+  "description": "A story continuity tool for Trello, Pivotal Tracker, and Github",
+  "main": "index.js",
+  "repository": "git@github.com:danmconrad/move-to.git",
+  "author": "Dan Conrad",
+  "license": "MIT",
+  "engines": {
+    "node": ">= 0.8"
+  },
+  "scripts": {
+    "cli": "./cli.js",
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
+  },
+  "dependencies": {
+    "commander": "^2.9.0",
+    "github": "^9.2.0",
+    "pivotaltracker": "^0.1.4",
+    "trello": "^0.7.0"
+  },
+  "devDependencies": {
+    "semantic-release": "^6.3.2"
+  }
+}
