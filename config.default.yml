@@ -1,15 +1,75 @@
+# Project management source.
+# Required: Enum [pivotal | trello]
+projectSource: null
+
+
+# ID of the team's project
+# Required: String
+projectId: null
+
+
+# A remote location to retrieve config rather than locally
+# Optional: String
 remoteConfigUrl: null
 
-cardIdSource: milestone                 # milestone, title, desciption, commit
-partialRegex: /\[wip [A-Za-z0-9]\]/
 
-actions:
+# Regex test to determine if state changes should be ignored
+partialRegex: .*-wip$
+
+
+# Github configation
+github:
+  host: api.github.com
+  apiPathPrefix: null
+  org: null
+  repo: null
+
+  storySource: title
+  storyExtract: \((#[a-zA-Z0-9-]+,? ?)+\)
+
+
+# Actions contain the same set of optional sub-actions.
+# Sub-actions available:
+#  - addLabels: Array<String> (null)
+#  - removeLabels: Array<String> (null)
+#  - attachPullRequest: Boolean (false)
+#  - state: String
+#    - Pivotal: [started, finished, delivered, rejected, accepted]
+#    - Trello: boardId
+
+
+# Pivotal default actions
+pivotal:
+  pr:
+    state: finished
+    addLabels:
+      - in-pr
+    attachPullRequest: true
+
+  merged:
+    addLabels:
+      - merged
+    removeLabels:
+      - in-pr
+
+  integrated:
+    state: delivered
+    addLabels:
+      - integrated
+
+  released:
+    addLabels:
+      - released
+    removeLabels:
+      - integrated
+
+
+# Trello default actions
+trello:
   pr:
     addLabels:
       - in-pr
-    removeLabels: false
     attachPullRequest: true
-    subscribeUser: true
 
   merged:
     addLabels:
@@ -20,8 +80,10 @@ actions:
   integrated:
     addLabels:
       - integrated
-    removeLabels: false
 
   released:
     addLabels:
       - released
+    removeLabels:
+      - integrated
+

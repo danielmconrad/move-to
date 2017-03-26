@@ -20,6 +20,8 @@
     "babel-register": "^6.24.0",
     "commander": "^2.9.0",
     "github": "^9.2.0",
+    "js-yaml": "^3.8.2",
+    "lodash": "^4.17.4",
     "pivotaltracker": "^0.1.4",
     "trello": "^0.7.0"
   },
