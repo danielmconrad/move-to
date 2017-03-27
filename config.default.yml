@@ -1,37 +1,28 @@
-# Project management source.
-# Required: Enum [pivotal | trello]
-projectSource: null
-
-
-# ID of the team's project
-# Required: String
+projectSource: 'pivotal'
 projectId: null
-
-
-# A remote location to retrieve config rather than locally
-# Optional: String
 remoteConfigUrl: null
 
+isPartialRegex: '.*-wip$'
+storiesRegex: '[\(\[](#[a-zA-Z0-9-]+,? ?)+[\)\]]'
+storiesSource: title
 
-# Github configation
 github:
   url: http://www.github.com
   host: api.github.com
   apiPathPrefix: null
   owner: null
   repo: null
-  storiesSource: title
 
-
-# Default Actions
-actions:
+states:
   in-pr:
-    state: finished
-    comment: '[PR [{{github.repo}} #{{pullRequestId}}]]({{repoUrl}}/pull/{{pullRequestId}}) was opened.'
+    moveTo: finished
+    comment: '[[{{github.owner}}/{{github.repo}}#{{prNumber}}]]({{prUrl}}).'
 
-  merged: {}
+  merged:
+    moveTo: finished
 
   integrated:
-    state: delivered
+    moveTo: delivered
 
-  released: {}
+  released:
+    moveTo: delivered

@@ -1,56 +1,65 @@
 'use strict';
 
-import {get} from 'lodash';
-import {eachSeries} from 'async';
+import _ from 'lodash';
+import async from 'async';
+import fs from 'fs';
+import path from 'path';
+import yml from 'js-yaml';
 
 import PivotalClient from './clients/pivotal';
 import TrelloClient from './clients/trello';
 import GithubClient from './clients/github';
 
-const CLIENTS = {
-  pivotal: PivotalClient,
-  trello: TrelloClient
-};
-
-const PARTIAL_REGEX = /.*-wip$/;
-
 class MoveTo {
-  constructor(config) {
-    this.config = config;
-
+  constructor(appConfig) {
+    this._setConfig(appConfig);
     this._validateConfig();
     this._setClients();
   }
 
-  // PUBLIC METHODS
+  handleStateChange(stateName, options) {
+    if (options.prNumbers) {
+      return this.updatePrsState(options.prNumbers, stateName);
+    }
 
-  handleAction(actionName, options) {
-    if (options.prIds) {
-      return this.githubClient
-        .findPairsFromPullRequestIds(options.prIds)
-        .then(pairs => this.updateStories(pairs, actionName, options));
+    if (options.diff) {
+      return this.githubClient.findPrNumbersFromDiff(options.diff)
+        .then((prNumbers) => this.updatePrsState(prNumbers, stateName));
     }
   }
 
-  updateStories(pairs, actionName, options) {
+  updatePrsState(prNumbers, stateName) {
+    return this.githubClient
+      .findPairsFromPrNumbers(prNumbers)
+      .then(pairs => this.updateStories(pairs, stateName));
+  }
+
+  updateStories(pairs, stateName) {
     return new Promise((resolve, reject) => {
-      eachSeries(pairs, (pair, cb) => {
-        this.updateStory(pair, actionName, options).then(() => cb());
+      async.eachSeries(pairs, ({storyId, prNumber}, cb) => {
+        this.updateStory(storyId, prNumber, stateName).then(() => cb());
       }, (err) => err ? reject(err) : resolve());
     });
   }
 
-  updateStory(pair, actionName, options) {
-    let {storyId, pullRequestId} = pair;
-    const isPartial = new RegExp(PARTIAL_REGEX).test(storyId);
-    const cleanStoryId = isPartial ? storyId.replace(PARTIAL_REGEX, '') : storyId;
+  updateStory(storyId, prNumber, stateName) {
+    const {isPartialRegex} = this.config;
+    const isPartial = new RegExp(isPartialRegex).test(storyId);
+    const cleanStoryId = isPartial ? storyId.replace(isPartialRegex, '') : storyId;
 
-    return this.projectClient.handleAction(actionName, cleanStoryId, pullRequestId, isPartial);
+    return this.projectClient.handleStateChange(stateName, cleanStoryId, prNumber, isPartial);
   }
 
   // PIVATE METHODS
 
-  _validateConfig(config) {
+  _setConfig(appConfig) {
+    const defaultConfigPath = path.join(__dirname, '../config.default.yml');
+    const defaultConfig = yml.safeLoad(fs.readFileSync(defaultConfigPath, 'utf8'));
+
+    this.config = _.defaultsDeep({}, appConfig, defaultConfig);
+  }
+
+  _validateConfig() {
     let requiredConfigs = [
       ['projectSource','projectSource'],
       ['projectId','projectId'],
@@ -68,7 +77,7 @@ class MoveTo {
     }
 
     const missingConfigs = requiredConfigs.reduce((missing, test) => {
-      if (!get(this.config, test[0])){
+      if (!_.get(this.config, test[0])){
         missing.push[test[1]];
       }
       return missing;
@@ -82,8 +91,15 @@ class MoveTo {
   }
 
   _setClients() {
+    const {projectSource} = this.config;
+    const projecClients = {
+      pivotal: PivotalClient,
+      trello: TrelloClient
+    };
+    const ClientClass = projecClients[projectSource];
+
     this.githubClient = new GithubClient(this.config);
-    this.projectClient = new (CLIENTS[this.config.projectSource])(this.config);
+    this.projectClient = new ClientClass(this.config);
   }
 }
 

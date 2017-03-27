@@ -1,27 +1,17 @@
 'use strict';
 
+import _ from 'lodash';
 import PivotalApi from 'pivotaltracker';
 import mustache from 'mustache';
-import {
-  concat,
-  defaultsDeep,
-  find,
-  reject,
-  omit,
-  uniqBy
-} from 'lodash';
 
+import Client from './index';
 
-class PivotalClient {
-  constructor(config) {
-    this.config = config;
-    this._setApi();
-  }
+class PivotalClient extends Client {
 
-  // PUBLIC METHODS
-
-  handleAction(actionName, storyId, pullRequestId, isPartial) {
-    return this.updateStory(storyId, actionName, isPartial);
+  setApi() {
+    this.api = new PivotalApi
+      .Client(this.config.tokens.pivotal)
+      .project(this.config.projectId);
   }
 
   findStory(storyId) {
@@ -32,37 +22,12 @@ class PivotalClient {
     });
   }
 
-  updateStory(storyId, actionName, isPartial) {
-    const action = this._getAction(actionName, isPartial);
-
+  updateStory(storyId, updateData) {
     return new Promise((resolve, reject) => {
-      return this.findStory(storyId).then((story) => {
-        if (!this._shouldUpdateStory(story, actionName)) {
-          return resolve();
-        }
-
-        const updateData = this._getUpdateData(story, actionName);
-
-        this.api.story(storyId).update(updateData, function(error, story) {
-          if (error) {
-            return reject(error);
-          }
-
-          if(!action.comment) {
-            return resolve();
-          }
-
-          this.addActionComment(actionName, storyId, pullRequestId, story)
-            .then(resolve)
-            .catch(reject);
-        });
+      this.api.story(storyId).update(updateData, function(error, story) {
+        return error ? reject(error) : resolve(story);
       });
     });
-  }
-
-  addActionComment(actionName, storyId, pullRequestId, story) {
-    const text = this._getActionComment(actionName, storyId, pullRequestId);
-    return this.addComment(storyId, text);
   }
 
   addComment(storyId, text) {
@@ -73,63 +38,37 @@ class PivotalClient {
     });
   }
 
-  // PRIVATE METHODS
-
-  _setApi() {
-    this.api = new PivotalApi
-      .Client(this.config.tokens.pivotal)
-      .project(this.config.projectId);
+  shouldUpdateStory(story, stateName) {
+    return !_.find(story.labels, {name: this.getStateLabel(stateName)});
   }
 
-  _getAction(actionName, isPartial) {
-    return omit(this.config.actions[actionName], isPartial ? 'state' : '');
-  }
-
-  _shouldUpdateStory(story, actionName) {
-    return !find(story.labels, {name: this._getActionLabel()});
-  }
-
-  _getActionLabel(actionName) {
-    return `${actionName}-${this.config.github.repo}`
-  }
-
-  _getActionLabels() {
-    return Object.keys(this.config.actions).map(key => this._getActionLabel(key));
-  }
-
-  _getUpdateData(story, actionName) {
-    const action = this._getAction(actionName);
-    const actionLabel = this._getActionLabel(actionName);
-    const actionLabels = this._getActionLabels();
+  getUpdateData(story, stateName) {
+    const state = this.getState(stateName);
+    const stateLabel = this.getStateLabel(stateName);
+    const stateLabels = this.getStateLabels();
 
     let updateData = {};
     let labels = [].concat(story.labels);
 
     // Remove labels
-    labels = reject(labels, ({name}) => {
-      const inRemoveLabels = (action.removeLabels || []).includes(name);
-      const inActionNames = actionLabels.includes(name);
-      return inRemoveLabels || inActionNames;
+    labels = _.reject(labels, ({name}) => {
+      const inRemoveLabels = (state.removeLabels || []).includes(name);
+      const inStateNames = stateLabels.includes(name);
+      return inRemoveLabels || inStateNames;
     });
 
     // Add labels
-    labels = labels.concat((action.addLabels || []).map(name => ({name})));
-    labels.push(actionLabel);
-    labels = uniqBy(labels, 'name');
+    labels = labels.concat((state.addLabels || []).map(name => ({name})));
+    labels.push(stateLabel);
+    labels = _.uniqBy(labels, 'name');
 
     updateData.labels = labels;
 
-    if (action.state) {
-      updateData.currentState = action.state;
+    if (state.moveTo) {
+      updateData.currentState = state.moveTo;
     }
 
     return updateData;
-  }
-
-  _getActionComment(actionName, storyId, pullRequestId) {
-    const action = this._getAction(actionName);
-    const view = Object.assign({pullRequestId}, this.config);
-    return mustache.render(action.comment, view);
   }
 }
 
