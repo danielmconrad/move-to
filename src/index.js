@@ -26,6 +26,8 @@ class MoveTo {
       return this.githubClient.findPrNumbersFromDiff(options.diff)
         .then((prNumbers) => this.updatePrsState(prNumbers, stateName));
     }
+
+    return Promise.reject('No action can be taken');
   }
 
   updatePrsState(prNumbers, stateName) {
@@ -61,10 +63,10 @@ class MoveTo {
 
   _validateConfig() {
     let requiredConfigs = [
-      ['projectSource','projectSource'],
-      ['projectId','projectId'],
-      ['github.owner','github.owner'],
-      ['github.repo','github.repo'],
+      ['projectSource', 'projectSource'],
+      ['projectId', 'projectId'],
+      ['github.owner', 'github.owner'],
+      ['github.repo', 'github.repo'],
       ['tokens.github', 'GITHUB_TOKEN']
     ];
 
@@ -76,9 +78,9 @@ class MoveTo {
       requiredConfigs.push(['tokens.pivotal', 'PIVOTAL_TOKEN']);
     }
 
-    const missingConfigs = requiredConfigs.reduce((missing, test) => {
-      if (!_.get(this.config, test[0])){
-        missing.push[test[1]];
+    const missingConfigs = requiredConfigs.reduce((missing, [testPath, desc]) => {
+      if (!_.get(this.config, testPath)) {
+        missing.push(desc);
       }
       return missing;
     }, []);

@@ -20,8 +20,10 @@ class GithubClient extends Client {
     const [base, head] = diff;
     const {repo, owner} = this.config.github;
 
-    this.api.repos.compareCommits({repo, owner, base, head})
-      .then(({data}) => console.log(data.commits));
+    this.api.repos.compareCommits({repo, owner, base, head});
+      // .then(({data}) => {
+      //   console.log(data.commits)
+      // });
 
     return Promise.reject();
   }
