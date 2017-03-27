@@ -11,4 +11,16 @@ const appConfigPath = path.join(process.cwd(), '.moveto.yml');
 let defaultConfig = yml.safeLoad(fs.readFileSync(defaultConfigPath, 'utf8'));
 let appConfig = yml.safeLoad(fs.readFileSync(appConfigPath, 'utf8'));
 
-export default _.defaultsDeep({}, appConfig, defaultConfig);
+const config = _.defaultsDeep({}, appConfig, defaultConfig);
+const {url, owner, repo} = config.github;
+
+const runtimeConfig = {
+  repoUrl: [url, owner, repo].join('/'),
+  tokens: {
+    github: process.env.GITHUB_TOKEN,
+    pivotal: process.env.PIVOTAL_TOKEN,
+    trello: process.env.TRELLO_TOKEN
+  }
+};
+
+export default _.defaultsDeep({}, runtimeConfig, config);

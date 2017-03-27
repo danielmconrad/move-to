@@ -1,14 +1,25 @@
 'use strict';
 
+import {get} from 'lodash';
+import {eachSeries} from 'async';
+
 import PivotalClient from './clients/pivotal';
 import TrelloClient from './clients/trello';
 import GithubClient from './clients/github';
 
+const CLIENTS = {
+  pivotal: PivotalClient,
+  trello: TrelloClient
+};
+
+const PARTIAL_REGEX = /.*-wip$/;
+
 class MoveTo {
   constructor(config) {
-    this._setGithubClient(config);
-    this._setProjectClient(config);
     this.config = config;
+
+    this._validateConfig();
+    this._setClients();
   }
 
   // PUBLIC METHODS
@@ -16,39 +27,63 @@ class MoveTo {
   handleAction(actionName, options) {
     if (options.prIds) {
       return this.githubClient
-        .findStoryIdsFromPullRequestIds(options.prIds)
-        .then(storyIds => this.updateStories(storyIds, actionName, options));
+        .findPairsFromPullRequestIds(options.prIds)
+        .then(pairs => this.updateStories(pairs, actionName, options));
     }
   }
 
-  updateStories(storyIds, actionName, options) {
-    return Promise.all(storyIds.map(storyId => this.updateStory(storyId, actionName, options)));
+  updateStories(pairs, actionName, options) {
+    return new Promise((resolve, reject) => {
+      eachSeries(pairs, (pair, cb) => {
+        this.updateStory(pair, actionName, options).then(() => cb());
+      }, (err) => err ? reject(err) : resolve());
+    });
   }
 
-  updateStory(storyId, actionName, options) {
-    let action = Object.assign({}, this.config[actionName]);
+  updateStory(pair, actionName, options) {
+    let {storyId, pullRequestId} = pair;
+    const isPartial = new RegExp(PARTIAL_REGEX).test(storyId);
+    const cleanStoryId = isPartial ? storyId.replace(PARTIAL_REGEX, '') : storyId;
 
-    const isPartial = new RegExp(this.config.partialRegex).test(storyId);
-
-    this.projectClient.handleAction(actionName, storyId, isPartial);
+    return this.projectClient.handleAction(actionName, cleanStoryId, pullRequestId, isPartial);
   }
 
   // PIVATE METHODS
 
-  _setGithubClient(config) {
-    this.githubClient = new GithubClient(config);
+  _validateConfig(config) {
+    let requiredConfigs = [
+      ['projectSource','projectSource'],
+      ['projectId','projectId'],
+      ['github.owner','github.owner'],
+      ['github.repo','github.repo'],
+      ['tokens.github', 'GITHUB_TOKEN']
+    ];
+
+    if (this.config.projectSource === 'trello') {
+      requiredConfigs.push(['tokens.trello', 'TRELLO_TOKEN']);
+    }
+
+    if (this.config.projectSource === 'pivotal') {
+      requiredConfigs.push(['tokens.pivotal', 'PIVOTAL_TOKEN']);
+    }
+
+    const missingConfigs = requiredConfigs.reduce((missing, test) => {
+      if (!get(this.config, test[0])){
+        missing.push[test[1]];
+      }
+      return missing;
+    }, []);
+
+    if (missingConfigs.length) {
+      throw new Error(
+        `Missing configurations for: ${missingConfigs.join(', ')}.`
+      );
+    }
   }
 
-  _setProjectClient(config) {
-    switch (config.projectSource) {
-      case 'trello':
-        this.projectClient = new TrelloClient(config);
-        break;
-      case 'pivotal':
-      default:
-        this.projectClient = new PivotalClient(config);
-        break;
-    }
+  _setClients() {
+    this.githubClient = new GithubClient(this.config);
+    this.projectClient = new (CLIENTS[this.config.projectSource])(this.config);
   }
 }
 

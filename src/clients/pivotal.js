@@ -1,26 +1,27 @@
 'use strict';
 
 import PivotalApi from 'pivotaltracker';
-import {concat, reject, omit} from 'lodash';
-
+import mustache from 'mustache';
+import {
+  concat,
+  defaultsDeep,
+  find,
+  reject,
+  omit,
+  uniqBy
+} from 'lodash';
 
 
 class PivotalClient {
-  constructor({pivotal, projectId} = config) {
-    this.clientConfig = pivotal;
-
-    this.api = new PivotalApi
-      .Client(process.env.PIVOTAL_TOKEN)
-      .project(projectId);
+  constructor(config) {
+    this.config = config;
+    this._setApi();
   }
 
   // PUBLIC METHODS
 
-  handleAction(actionName, storyId, pullRequest, isPartial) {
-    const action = this._getAction(actionName, isPartial);
-
-    this.findStory(storyId)
-      .then(story => this.updateStory(story, action));
+  handleAction(actionName, storyId, pullRequestId, isPartial) {
+    return this.updateStory(storyId, actionName, isPartial);
   }
 
   findStory(storyId) {
@@ -31,36 +32,104 @@ class PivotalClient {
     });
   }
 
-  updateStory(story, action) {
-    if (action.removeLabels) {
-      story.labels = _.reject(story.labels, action.removeLabels);
-    }
-
-    if (action.addLabels) {
-      story.labels = _.concat(story.labels, action.addLabels);
-    }
-
-    if (action.state) {
-      story.currentState = action.state;
-    }
+  updateStory(storyId, actionName, isPartial) {
+    const action = this._getAction(actionName, isPartial);
 
     return new Promise((resolve, reject) => {
-      this.api.story(storyId).update(newStoryData, function(error, story) {
-        return error ? reject(error) : resolve(story);
+      return this.findStory(storyId).then((story) => {
+        if (!this._shouldUpdateStory(story, actionName)) {
+          return resolve();
+        }
+
+        const updateData = this._getUpdateData(story, actionName);
+
+        this.api.story(storyId).update(updateData, function(error, story) {
+          if (error) {
+            return reject(error);
+          }
+
+          if(!action.comment) {
+            return resolve();
+          }
+
+          this.addActionComment(actionName, storyId, pullRequestId, story)
+            .then(resolve)
+            .catch(reject);
+        });
       });
     });
+  }
 
-    console.log({story, action});
+  addActionComment(actionName, storyId, pullRequestId, story) {
+    const text = this._getActionComment(actionName, storyId, pullRequestId);
+    return this.addComment(storyId, text);
+  }
+
+  addComment(storyId, text) {
+    return new Promise((resolve, reject) => {
+      this.api.story(storyId).comments.create({text}, function(error) {
+        return error ? reject(error) : resolve();
+      });
+    });
   }
 
   // PRIVATE METHODS
 
-  _getApiToken() {
-
+  _setApi() {
+    this.api = new PivotalApi
+      .Client(this.config.tokens.pivotal)
+      .project(this.config.projectId);
   }
 
   _getAction(actionName, isPartial) {
-    return omit(this.clientConfig[actionName], isPartial ? 'state' : '');
+    return omit(this.config.actions[actionName], isPartial ? 'state' : '');
+  }
+
+  _shouldUpdateStory(story, actionName) {
+    return !find(story.labels, {name: this._getActionLabel()});
+  }
+
+  _getActionLabel(actionName) {
+    return `${actionName}-${this.config.github.repo}`
+  }
+
+  _getActionLabels() {
+    return Object.keys(this.config.actions).map(key => this._getActionLabel(key));
+  }
+
+  _getUpdateData(story, actionName) {
+    const action = this._getAction(actionName);
+    const actionLabel = this._getActionLabel(actionName);
+    const actionLabels = this._getActionLabels();
+
+    let updateData = {};
+    let labels = [].concat(story.labels);
+
+    // Remove labels
+    labels = reject(labels, ({name}) => {
+      const inRemoveLabels = (action.removeLabels || []).includes(name);
+      const inActionNames = actionLabels.includes(name);
+      return inRemoveLabels || inActionNames;
+    });
+
+    // Add labels
+    labels = labels.concat((action.addLabels || []).map(name => ({name})));
+    labels.push(actionLabel);
+    labels = uniqBy(labels, 'name');
+
+    updateData.labels = labels;
+
+    if (action.state) {
+      updateData.currentState = action.state;
+    }
+
+    return updateData;
+  }
+
+  _getActionComment(actionName, storyId, pullRequestId) {
+    const action = this._getAction(actionName);
+    const view = Object.assign({pullRequestId}, this.config);
+    return mustache.render(action.comment, view);
   }
 }
 

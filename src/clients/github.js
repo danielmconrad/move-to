@@ -11,24 +11,21 @@ const API_OPTIONS = {
   timeout: 5000
 };
 
-class GithubClient {
-  constructor({github} = config) {
-    this.clientConfig = github;
-    this.api = GitHubApi(this._getApiOptions());
+const STORIES_REGEX = /\((#[a-zA-Z0-9-]+,? ?)+\)/;
 
-    this.api.authenticate({
-      type: 'token',
-      token: process.env.GITHUB_TOKEN,
-    });
+class GithubClient {
+  constructor(config) {
+    this.config = config;
+    this._setApi();
   }
 
   // PUBLIC METHODS
 
-  findStoryIdsFromPullRequestIds(pullRequestIds) {
+  findPairsFromPullRequestIds(pullRequestIds) {
     return this.findPullRequests(pullRequestIds)
       .then((pullRequests) => {
         return flatten(pullRequests.map((pullRequest) => {
-          return this.getStoryIdsFromPullRequest(pullRequest);
+          return this.getPairsFromPullRequest(pullRequest);
         }));
       });
   }
@@ -38,28 +35,40 @@ class GithubClient {
   }
 
   findPullRequest(number) {
-    const {owner, repo} = this.clientConfig;
+    const {owner, repo} = this.config.github;
 
     return this.api.pullRequests
       .get({owner, repo, number})
       .then(({data}) => data);
   }
 
-  getStoryIdsFromPullRequest(pullRequest) {
-    const {storySource, storyExtract} = this.clientConfig;
-    const stringContainingStories = get(pullRequest, storySource);
-    const [storiesString] = stringContainingStories.match(storyExtract);
+  getPairsFromPullRequest(pullRequest) {
+    const {storiesSource} = this.config.github;
+    const stringContainingStories = get(pullRequest, storiesSource);
+    const [storiesString] = stringContainingStories.match(STORIES_REGEX);
 
     return storiesString
       .replace(/[\(\)]/g, '')
       .split(',')
-      .map(str => str.replace('#', '').trim());
+      .map((str) => {
+        const storyId = str.replace('#', '').trim();
+        return {pullRequestId: pullRequest.number, storyId: storyId};
+      });
   }
 
   // PRIVATE METHODS
 
+  _setApi() {
+    this.api = GitHubApi(this._getApiOptions());
+
+    this.api.authenticate({
+      type: 'token',
+      token: this.config.tokens.github
+    });
+  }
+
   _getApiOptions() {
-    const {apiHost, apiPathPrefix} = this.clientConfig;
+    const {apiHost, apiPathPrefix} = this.config.github;
     let apiOptions = Object.assign({}, API_OPTIONS);
 
     if (apiHost) {

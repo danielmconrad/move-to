@@ -12,85 +12,26 @@ projectId: null
 # Optional: String
 remoteConfigUrl: null
 
-# Regex test to determine if state changes should be ignored
-partialRegex: .*-wip$
 
 # Github configation
 github:
+  url: http://www.github.com
   host: api.github.com
   apiPathPrefix: null
-  org: null
+  owner: null
   repo: null
-
-  storySource: title
-  storyExtract: \((#[a-zA-Z0-9-]+,? ?)+\)
+  storiesSource: title
 
 
-# Names of environment variables that contain client tokens
-# These values are usually stored in CI rather than the git repo.
-# Ex: process.env.GITHUB_TOKEN
-# tokens:
-#   github: 'GITHUB_TOKEN'
-#   pivotal: 'PIVOTAL_TOKEN'
-#   trello: 'TRELLO_TOKEN'
-
-
-# Actions contain the same set of optional sub-actions.
-# Sub-actions available:
-#  - addLabels: Array<String> (null)
-#  - removeLabels: Array<String> (null)
-#  - attachPullRequest: Boolean (false)
-#  - state: String
-#    - Pivotal: [started, finished, delivered, rejected, accepted]
-#    - Trello: boardId
-
-
-# Pivotal default actions
-pivotal:
-  pr:
+# Default Actions
+actions:
+  in-pr:
     state: finished
-    addLabels:
-      - in-pr
-    attachPullRequest: true
+    comment: '[PR [{{github.repo}} #{{pullRequestId}}]]({{repoUrl}}/pull/{{pullRequestId}}) was opened.'
 
-  merged:
-    addLabels:
-      - merged
-    removeLabels:
-      - in-pr
+  merged: {}
 
   integrated:
     state: delivered
-    addLabels:
-      - integrated
 
-  released:
-    addLabels:
-      - released
-    removeLabels:
-      - integrated
-
-
-# Trello default actions
-trello:
-  pr:
-    addLabels:
-      - in-pr
-    attachPullRequest: true
-
-  merged:
-    addLabels:
-      - merged
-    removeLabels:
-      - in-pr
-
-  integrated:
-    addLabels:
-      - integrated
-
-  released:
-    addLabels:
-      - released
-    removeLabels:
-      - integrated
-
+  released: {}

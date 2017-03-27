@@ -13,15 +13,20 @@
     "move-to": "./cli.js"
   },
   "scripts": {
+    "test": "yarn run lint",
+    "lint": "eslint src --ext .js --max-warnings 0",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "dependencies": {
+    "async": "^2.2.0",
     "babel-preset-es2015": "^6.24.0",
     "babel-register": "^6.24.0",
     "commander": "^2.9.0",
+    "eslint": "^3.18.0",
     "github": "^9.2.0",
     "js-yaml": "^3.8.2",
     "lodash": "^4.17.4",
+    "mustache": "^2.3.0",
     "pivotaltracker": "^0.1.4",
     "trello": "^0.7.0"
   },

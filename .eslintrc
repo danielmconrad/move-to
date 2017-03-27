@@ -1,0 +1,11 @@
+{
+  "parserOptions": {
+    "ecmaVersion": 6,
+    "sourceType": "module"
+  },
+  "rules": {
+    "no-duplicate-imports": "error",
+    "prefer-template": "error",
+    "template-curly-spacing": ["error", "never"]
+  }
+}
