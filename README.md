@@ -2,12 +2,15 @@
 
 ### How it works
 
-### Getting Started
-
-### Actions
+#### Actions
 - addLabels: Array<String> (null)
 - removeLabels: Array<String> (null)
-- attachPullRequest: Boolean (false)
-- state: String
+- comment: String (null)
+- status: String
   - Pivotal: [started, finished, delivered, rejected, accepted]
   - Trello: boardId
+
+### CLI
+
+### Module API
+
