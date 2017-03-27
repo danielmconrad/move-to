@@ -4,7 +4,6 @@ import _ from 'lodash';
 import GitHubApi from 'github';
 import Client from './index';
 
-
 class GithubClient extends Client {
 
   setApi() {
@@ -20,17 +19,13 @@ class GithubClient extends Client {
     const [base, head] = diff;
     const {repo, owner} = this.config.github;
 
-    this.api.repos.compareCommits({repo, owner, base, head});
-      // .then(({data}) => {
-      //   console.log(data.commits)
-      // });
-
-    return Promise.reject();
+    return this.api.repos.compareCommits({repo, owner, base, head})
+      .then(({data}) => this.getPrNumbersFromCommits(data.commits));
   }
 
   findPairsFromPrNumbers(prNumbers) {
     return this.findPrs(prNumbers)
-      .then(prs => _.flatten(prs.map(pr => this.getPairsFromPr(pr))));
+      .then(prs => _.flatten(_.compact(prs.map(pr => this.getPairsFromPr(pr)))));
   }
 
   findPrs(prNumbers) {
@@ -45,11 +40,37 @@ class GithubClient extends Client {
       .then(({data}) => data);
   }
 
+  getPrNumbersFromCommits(commits) {
+    return _.compact(commits.map(commit => this.getPrNumbersFromCommit(commit)));
+  }
+
+  getPrNumbersFromCommit(commit) {
+    const {message} = commit.commit;
+    const regexMethods = this.config.prInCommitRegexes;
+
+    const regexKey = _.findKey(regexMethods, ({test}) => {
+      return new RegExp(test).test(message);
+    });
+
+    if (!regexKey) {
+      return null;
+    }
+
+    const regexMethod = regexMethods[regexKey];
+    return message.match(regexMethod.test)[regexMethod.index];
+  }
+
   getPairsFromPr(pr) {
-    const {storiesSource, storiesRegex} = this.config;
-    const stringContainingStories = _.get(pr, storiesSource);
-    const [storiesString] = stringContainingStories.match(storiesRegex);
     const prNumber = pr.number;
+    const {storiesSource, storiesRegex, storiesRegexIndex} = this.config;
+    const stringContainingStories = _.get(pr, storiesSource);
+    const matches = stringContainingStories.match(storiesRegex);
+
+    if (!matches) {
+      return null;
+    }
+
+    const storiesString = matches[storiesRegexIndex];
 
     return storiesString
       .replace(/[\(\)\[\]#]/g, '')

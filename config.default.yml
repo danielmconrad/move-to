@@ -3,8 +3,18 @@ projectId: null
 remoteConfigUrl: null
 
 isPartialRegex: '.*-wip$'
-storiesRegex: '[\(\[](#[a-zA-Z0-9-]+,? ?)+[\)\]]'
 storiesSource: title
+
+storiesRegex: '[\(\[](#[a-zA-Z0-9-]+,? ?)+[\)\]]'
+storiesRegexIndex: 0
+
+prInCommitRegexes:
+  mergeCommit:
+    test: 'Merge pull request #(\d+) from'
+    index: 1
+  squashCommit:
+    test: '\(#(\d+)\)(\\n)?.*'
+    index: 1
 
 github:
   url: http://www.github.com
