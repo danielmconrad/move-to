@@ -24,7 +24,7 @@ class MoveTo {
 
     if (options.diff) {
       return this.githubClient.findPrNumbersFromDiff(options.diff)
-        .then((prNumbers) => this.updatePrsState(prNumbers, stateName));
+        .then(prNumbers => this.updatePrsState(prNumbers, stateName));
     }
 
     return Promise.reject('No action can be taken');
