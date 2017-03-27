@@ -9,42 +9,44 @@ class Client {
     this.setApi();
   }
 
-  setApi() {
-  }
+  // setApi() {
+  // }
 
-  findStory(storyId) {
-  }
+  // findStory(storyId) {
+  // }
 
-  addComment(storyId, text) {
-  }
+  // addComment(storyId, text) {
+  // }
 
-  updateStory(storyId, updateData) {
-  }
+  // updateStory(storyId, updateData) {
+  // }
 
-  shouldUpdateStory(story, stateName) {
-  }
+  // shouldUpdateStory(story, stateName) {
+  // }
 
-  getUpdateData(story, stateName) {
-  }
+  // getUpdateData(story, stateName) {
+  // }
 
   handleStateChange(stateName, storyId, prNumber, isPartial) {
-    const state = this.getState(stateName, isPartial);
-
     return this.findStory(storyId).then((story) => {
-      if (!this.shouldUpdateStory(story, stateName)) return;
+      if (!this.shouldUpdateStory(story, stateName)) {
+        return null;
+      }
 
+      const state = this.getState(stateName, isPartial);
       const updateData = this.getUpdateData(story, stateName);
 
-      return this.updateStory(storyId, updateData)
-        .then(() => {
-          if(!state.comment) return;
+      return this.updateStory(storyId, updateData).then(() => {
+        if (!state.comment) {
+          return null;
+        }
 
-          return this.addStateComment(stateName, storyId, prNumber, story)
-        });
+        return this.addStateComment(stateName, storyId, prNumber);
+      });
     });
   }
 
-  addStateComment(stateName, storyId, prNumber, story) {
+  addStateComment(stateName, storyId, prNumber) {
     const text = this.getStateComment(stateName, storyId, prNumber);
     return this.addComment(storyId, text);
   }
@@ -54,7 +56,7 @@ class Client {
   }
 
   getStateLabel(stateName) {
-    return `${stateName}-${this.config.github.repo}`
+    return `${stateName}-${this.config.github.repo}`;
   }
 
   getStateLabels() {

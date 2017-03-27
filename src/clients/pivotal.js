@@ -2,12 +2,10 @@
 
 import _ from 'lodash';
 import PivotalApi from 'pivotaltracker';
-import mustache from 'mustache';
 
 import Client from './index';
 
 class PivotalClient extends Client {
-
   setApi() {
     this.api = new PivotalApi
       .Client(this.config.tokens.pivotal)
@@ -16,7 +14,7 @@ class PivotalClient extends Client {
 
   findStory(storyId) {
     return new Promise((resolve, reject) => {
-      this.api.story(storyId).get(function(error, story) {
+      this.api.story(storyId).get((error, story) => {
         return error ? reject(error) : resolve(story);
       });
     });
@@ -24,7 +22,7 @@ class PivotalClient extends Client {
 
   updateStory(storyId, updateData) {
     return new Promise((resolve, reject) => {
-      this.api.story(storyId).update(updateData, function(error, story) {
+      this.api.story(storyId).update(updateData, (error, story) => {
         return error ? reject(error) : resolve(story);
       });
     });
@@ -32,7 +30,7 @@ class PivotalClient extends Client {
 
   addComment(storyId, text) {
     return new Promise((resolve, reject) => {
-      this.api.story(storyId).comments.create({text}, function(error) {
+      this.api.story(storyId).comments.create({text}, (error) => {
         return error ? reject(error) : resolve();
       });
     });

@@ -3,30 +3,23 @@
 import Client from './index';
 
 class TrelloClient extends Client {
+  // setApi() {
+  // }
 
-  setApi() {
-    // Must implement
-  }
+  // findStory(storyId) {
+  // }
 
-  findStory(storyId) {
-    // Must implement
-  }
+  // addComment(storyId, text) {
+  // }
 
-  addComment(storyId, text) {
-    // Must implement
-  }
+  // updateStory(storyId, updateData) {
+  // }
 
-  updateStory(storyId, updateData) {
-    // Must implement
-  }
+  // shouldUpdateStory(story, stateName) {
+  // }
 
-  shouldUpdateStory(story, stateName) {
-    // Must implement
-  }
-
-  getUpdateData(story, stateName) {
-    // Must implement
-  }
+  // getUpdateData(story, stateName) {
+  // }
 }
 
 export default TrelloClient;
