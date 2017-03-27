@@ -3,18 +3,18 @@
 import commander from 'commander';
 import MoveTo from './index';
 import packageJson from '../package';
-import {parseArray} from './parsers';
-import config from './config';
+import {parseArray, parseDiff} from './parsers';
+import rc from './rc';
 
-const moveTo = new MoveTo(config);
+const moveTo = new MoveTo(rc);
 const cli = commander.version(packageJson.version);
 
 cli
-  .arguments('<actionName>')
-  .option('-p, --pr-ids <prIds>', 'PR Ids (comma separated)', parseArray)
-  .option('-d, --diff <diff>', 'PRs between diff (Ex: master...develop)', parseArray)
-  .action((actionName, options) => {
-    return moveTo.handleAction(actionName, options);
+  .command('state <stateName>')
+  .option('-p, --pr-numbers <prNumbers>', 'PR Numbers (comma separated)', parseArray)
+  .option('-d, --diff <diff>', 'PRs between diff (Ex: master...develop)', parseDiff)
+  .action((stateName, options) => {
+    return moveTo.handleStateChange(stateName, options);
   });
 
 cli.parse(process.argv);

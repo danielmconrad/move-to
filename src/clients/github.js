@@ -1,64 +1,13 @@
 'use strict';
 
+import _ from 'lodash';
 import GitHubApi from 'github';
-import {flatten, get} from 'lodash';
+import Client from './index';
 
-const API_OPTIONS = {
-  protocol: 'https',
-  headers: {
-    'user-agent': 'MoveTo CLI'
-  },
-  timeout: 5000
-};
 
-const STORIES_REGEX = /\((#[a-zA-Z0-9-]+,? ?)+\)/;
+class GithubClient extends Client {
 
-class GithubClient {
-  constructor(config) {
-    this.config = config;
-    this._setApi();
-  }
-
-  // PUBLIC METHODS
-
-  findPairsFromPullRequestIds(pullRequestIds) {
-    return this.findPullRequests(pullRequestIds)
-      .then((pullRequests) => {
-        return flatten(pullRequests.map((pullRequest) => {
-          return this.getPairsFromPullRequest(pullRequest);
-        }));
-      });
-  }
-
-  findPullRequests(pullRequestIds) {
-    return Promise.all(pullRequestIds.map(id => this.findPullRequest(id)));
-  }
-
-  findPullRequest(number) {
-    const {owner, repo} = this.config.github;
-
-    return this.api.pullRequests
-      .get({owner, repo, number})
-      .then(({data}) => data);
-  }
-
-  getPairsFromPullRequest(pullRequest) {
-    const {storiesSource} = this.config.github;
-    const stringContainingStories = get(pullRequest, storiesSource);
-    const [storiesString] = stringContainingStories.match(STORIES_REGEX);
-
-    return storiesString
-      .replace(/[\(\)]/g, '')
-      .split(',')
-      .map((str) => {
-        const storyId = str.replace('#', '').trim();
-        return {pullRequestId: pullRequest.number, storyId: storyId};
-      });
-  }
-
-  // PRIVATE METHODS
-
-  _setApi() {
+  setApi() {
     this.api = GitHubApi(this._getApiOptions());
 
     this.api.authenticate({
@@ -67,9 +16,55 @@ class GithubClient {
     });
   }
 
+  findPrNumbersFromDiff(diff) {
+    const [base, head] = diff;
+    const {repo, owner} = this.config.github;
+
+    this.api.repos.compareCommits({repo, owner, base, head})
+      .then(({data}) => console.log(data.commits));
+
+    return Promise.reject();
+  }
+
+  findPairsFromPrNumbers(prNumbers) {
+    return this.findPrs(prNumbers)
+      .then(prs => _.flatten(prs.map(pr => this.getPairsFromPr(pr))));
+  }
+
+  findPrs(prNumbers) {
+    return Promise.all(prNumbers.map(id => this.findPr(id)));
+  }
+
+  findPr(number) {
+    const {owner, repo} = this.config.github;
+
+    return this.api.pullRequests
+      .get({owner, repo, number})
+      .then(({data}) => data);
+  }
+
+  getPairsFromPr(pr) {
+    const {storiesSource, storiesRegex} = this.config;
+    const stringContainingStories = _.get(pr, storiesSource);
+    const [storiesString] = stringContainingStories.match(storiesRegex);
+    const prNumber = pr.number;
+
+    return storiesString
+      .replace(/[\(\)\[\]#]/g, '')
+      .split(',')
+      .map(storyId => ({storyId, prNumber}));
+  }
+
   _getApiOptions() {
     const {apiHost, apiPathPrefix} = this.config.github;
-    let apiOptions = Object.assign({}, API_OPTIONS);
+
+    let apiOptions = Object.assign({}, {
+      protocol: 'https',
+      headers: {
+        'user-agent': 'MoveTo CLI'
+      },
+      timeout: 5000
+    });
 
     if (apiHost) {
       apiOptions.host = apiHost;
