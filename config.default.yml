@@ -16,7 +16,7 @@ github:
 states:
   in-pr:
     moveTo: finished
-    comment: 'Pull Request: [[{{github.repo}} #{{prNumber}}]]({{prUrl}}).'
+    comment: '[[{{github.owner}}/{{github.repo}}#{{prNumber}}]]({{prUrl}}).'
 
   merged:
     moveTo: finished
