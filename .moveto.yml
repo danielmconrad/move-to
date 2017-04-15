@@ -1,4 +1,6 @@
-projectId: 1995921
+projectId: '1995921'
+projectSource: pivotal
+storiesSource: title
 github:
   owner: danmconrad
   repo: move-to

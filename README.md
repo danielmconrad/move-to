@@ -1,16 +1,23 @@
+# STILL UNDER ACTIVE DEVELOPMENT
+
+MoveTo is a command line tool to progress stories along a pipeline. Using the cli in conjunction with a CI environment makes the shipment of stories nearly automatic.
+
+
+#### Supported CI Tools
+- Travis
+
+
+#### Supported Story Managers
+- Pivotal Tracker
+
+
 ### Installation
 
-### How it works
+Install the `move-to` module globally. From within your project folder, run the `move-to` installer.
 
-#### Actions
-- addLabels: Array<String> (null)
-- removeLabels: Array<String> (null)
-- comment: String (null)
-- status: String
-  - Pivotal: [started, finished, delivered, rejected, accepted]
-  - Trello: boardId
+```bash
+yarn global add move-to
+move-to install
+```
 
-### CLI
-
-### Module API
-
+** Missing Travis portion of install **

@@ -1,10 +1,13 @@
-projectSource: 'pivotal'
+# Future config
+# remoteConfigUrl: null
+
+# Installer
+projectSource: null
 projectId: null
-remoteConfigUrl: null
+storiesSource: null
 
+# Non-Installer
 isPartialRegex: '.*-wip$'
-storiesSource: title
-
 storiesRegex: '[\(\[](#[a-zA-Z0-9-]+,? ?)+[\)\]]'
 storiesRegexIndex: 0
 
@@ -18,10 +21,10 @@ prInCommitRegexes:
 
 github:
   url: http://www.github.com
-  host: api.github.com
+  apiHost: api.github.com
   apiPathPrefix: null
   owner: null
-  repo: null
+  project: null
 
 states:
   in-pr:
