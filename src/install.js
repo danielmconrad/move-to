@@ -11,17 +11,23 @@ const packageJson = require(path.join(process.cwd(), 'package.json'));
 
 function askQuestions() {
   return inquirer.prompt([{
+    name: 'projectSource',
+    message: 'What are you using to manage your stories?',
+    type: 'list',
+    choices: [
+      {name: 'Pivotal Tracker', value: 'pivotal'}
+      // {name: 'Trello', value: 'trello'}
+    ]
+  }, {
+    when: (a => a.projectSource === 'pivotal'),
     name: 'projectId',
-    message: 'What is your projectId?',
-    validate: (input => input.length >= 6)
-  // },{
-  //   name: 'projectSource',
-  //   message: 'What are you using to manage your stories?',
-  //   type: 'list',
-  //   choices: [
-  //     {name: 'Pivotal', value: 'pivotal'},
-  //     {name: 'Trello', value: 'trello'}
-  //   ]
+    message: 'What is your Pivotal Project ID? (123456)',
+    validate: input => /^[0-9]{6,}/.test(input)
+  }, {
+    when: (a => a.projectSource === 'trello'),
+    name: 'projectId',
+    message: 'What is your Trello Project ID? (abcd1234)',
+    validate: input => /^[0-9a-zA-Z]{8}/.test(input)
   }, {
     name: 'isEnterprise',
     message: 'Do you have a self-hosted Enterprise Github?',
