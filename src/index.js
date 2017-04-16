@@ -2,10 +2,8 @@
 
 import _ from 'lodash';
 import async from 'async';
-import fs from 'fs';
-import path from 'path';
-import yml from 'js-yaml';
 
+import {getDefaultConfig} from './config';
 import PivotalClient from './clients/pivotal';
 import TrelloClient from './clients/trello';
 import GithubClient from './clients/github';
@@ -55,10 +53,7 @@ class MoveTo {
   // PIVATE METHODS
 
   _setConfig(appConfig) {
-    const defaultConfigPath = path.join(__dirname, '../config.default.yml');
-    const defaultConfig = yml.safeLoad(fs.readFileSync(defaultConfigPath, 'utf8'));
-
-    this.config = _.defaultsDeep({}, appConfig, defaultConfig);
+    this.config = _.defaultsDeep({}, appConfig, getDefaultConfig());
   }
 
   _validateConfig() {
