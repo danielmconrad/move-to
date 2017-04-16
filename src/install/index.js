@@ -1,5 +1,9 @@
 'use strict';
 
+// TODO:
+//  - Ask for PIVOTAL_TOKEN and place it in their CI build params if not existent
+//  - Add in-pr and merged states to CI build if not existent.
+
 import fs from 'fs';
 import path from 'path';
 import inquirer from 'inquirer';
