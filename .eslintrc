@@ -41,7 +41,7 @@
   "rules": {
     "block-scoped-var": 0,
     "brace-style": 1,
-    "camelcase": 1,
+    "camelcase": 0,
     "comma-dangle": 2,
     "comma-spacing": [1, {"before": false, "after": true}],
     "comma-style": [1, "last"],
